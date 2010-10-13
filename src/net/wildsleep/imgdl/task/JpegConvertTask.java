@@ -32,16 +32,19 @@ public class JpegConvertTask implements Task {
 		
 		if (JpegConverter.isAnimated(source)) {
 			resultFile = source;
+			state.setMessage("Finished (no conversion done).");
+			state.setFinished();
 		} else {
 			state.setMessage("Converting file to JPEG...");
-			source.renameTo(temp);
-			JpegConverter.convert(temp, destination);
-			temp.delete();
-			resultFile = destination;
-			converted = true;
+			if (source.renameTo(temp)) {
+				JpegConverter.convert(temp, destination);
+				temp.delete();
+				resultFile = destination;
+				converted = true;
+				state.setMessage("Finished conversion.");
+				state.setFinished();
+			}
 		}
-		state.setMessage("Finished.");
-		state.setFinished();
 	}
 
 	@Override

@@ -33,8 +33,9 @@ public class IqdbQueryTask implements Task {
 	
 	private static boolean IGNORE_COLORS = false;
 	
-	private static final Pattern DIMENSION_REGEX  = Pattern.compile("([0-9]*)×([0-9]*) \\[[A-za-z]*\\]");
-	private static final Pattern SIMILARITY_REGEX = Pattern.compile("([0-9]*)% similarity");
+	private static final Pattern DIMENSION_REGEX   = Pattern.compile("([0-9]*)×([0-9]*) \\[[A-za-z]*\\]");
+	private static final Pattern SIMILARITY_REGEX  = Pattern.compile("([0-9]*)% similarity");
+	private static final Pattern SEARCH_FAIL_REGEX = Pattern.compile("No relevant matches");
 	
 	private ValueStrategy<File> fileStrategy;
 	private ValueStrategy<URL> urlStrategy;
@@ -83,21 +84,56 @@ public class IqdbQueryTask implements Task {
 			Source source = new Source(response);
 			
 			Element divPages = source.getElementById("pages");
-			Iterator<Element> iterPages = divPages.getChildElements().iterator();
-			iterPages.next(); // Ignore first child ("Your image")
-			while (iterPages.hasNext()) {
-				Element subElement = iterPages.next();
-				if (!"div".equals(subElement.getName()))
-					continue;
-				results.add(parseResultDiv(subElement));
+			if (divPages == null)
+				throw new IOException("IQDB parser error");
+			if (!"div".equals(divPages.getName()))
+				throw new IOException("IQDB parser error");
+			if (divPages.getChildElements().size() < 2)
+				throw new IOException("IQDB parser error");
+			Element divFirstMatch = divPages.getChildElements().get(1);
+			if (!"div".equals(divFirstMatch.getName()))
+				throw new IOException("IQDB parser error");
+			if (!isFailedSearch(divFirstMatch)) {
+				Iterator<Element> iterPages = divPages.getChildElements().iterator();
+				iterPages.next(); // Ignore first child ("Your image")
+				while (iterPages.hasNext()) {
+					Element subElement = iterPages.next();
+					if (!"div".equals(subElement.getName()))
+						continue;
+					results.add(parseResultDiv(subElement));
+				}
 			}
 			state.setMessage("Finished.");
 			state.setFinished();		
 			
 		} catch (IOException e) {
 			e.printStackTrace();
-			state.setError("IQDB lookup failed.");
+			if (fileStrategy != null) {
+				state.setError("IQDB lookup failed on file " + fileStrategy.get().getName() + ".");
+			} else {
+				state.setError("IQDB lookup failed on url " + urlStrategy.get().getFile() + ".");
+			}
 		}
+	}
+	
+	private boolean isFailedSearch(Element div) throws IOException {
+		if (div.getChildElements().size() != 1)
+			throw new IOException("IQDB parser error");
+		
+		Element table = div.getChildElements().get(0);
+		if (table.getChildElements().size() < 1)
+			throw new IOException("IQDB parser error");
+		
+		Element trHeader = table.getChildElements().get(0);
+		if (trHeader.getChildElements().size() != 1)
+			throw new IOException("IQDB parser error");
+		
+		String headerString = trHeader.getContent().getTextExtractor().toString();
+		Matcher headerMatcher = SEARCH_FAIL_REGEX.matcher(headerString);
+		if (headerMatcher.matches())
+			return true;
+		
+		return false;
 	}
 	
 	private IqdbResult parseResultDiv(Element div) throws IOException {

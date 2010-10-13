@@ -2,11 +2,13 @@ package net.wildsleep.imgdl.taskfactory;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Iterator;
 import java.util.List;
 
 import net.wildsleep.imgdl.IqdbResult;
 import net.wildsleep.imgdl.ValueStrategy;
 import net.wildsleep.imgdl.task.CompositeTask;
+import net.wildsleep.imgdl.task.ConditionalTask;
 import net.wildsleep.imgdl.task.IqdbQueryTask;
 import net.wildsleep.imgdl.task.Task;
 import net.wildsleep.imgdl.task.TaskFactoryTask;
@@ -43,10 +45,12 @@ public class IqdbDownloadTaskFactory implements TaskFactory {
 				List<IqdbResult> results = queryTask.getResults();
 				if (results.size() == 0)
 					return null;
-				IqdbResult best = results.get(0);
 				
-				for (int index = 1; index < results.size(); index++) {
-					IqdbResult current = results.get(index);
+				Iterator<IqdbResult> iter = results.iterator();
+				IqdbResult best = iter.next();
+				
+				while (iter.hasNext()) {
+					IqdbResult current = iter.next();
 					if (current.getSimilarity() < minimumSimilarity)
 						continue;
 					if (postPrioritization.equals(PostPrioritization.SIMILARITY)) {
@@ -61,11 +65,21 @@ public class IqdbDownloadTaskFactory implements TaskFactory {
 				return best.getUrl();
 			}};
 		
+			ValueStrategy<Boolean> resultsFoundStrategy = new ValueStrategy<Boolean>() {
+				@Override
+				public Boolean get() {
+					List<IqdbResult> results = queryTask.getResults();
+					if (results.size() == 0)
+						return false;				
+					return true;
+				}};
+		
 		final TaskFactoryTask postDownloadTask = new TaskFactoryTask(new PostDownloadTaskFactory(directoryStrategy), getPostUrlStrategy);
+		final ConditionalTask conditionalDownloadTask = new ConditionalTask(postDownloadTask, resultsFoundStrategy);
 		
 		CompositeTask task = new CompositeTask();
 		task.addTask(queryTask);
-		task.addTask(postDownloadTask);
+		task.addTask(conditionalDownloadTask);
 		return task;
 	}
 

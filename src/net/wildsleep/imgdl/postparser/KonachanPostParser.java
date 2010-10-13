@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.htmlparser.jericho.Element;
@@ -64,11 +65,12 @@ public class KonachanPostParser implements ImageboardParser {
 				throw new IOException("Post parser error");
 			Element aTagName = subElements.get(1);
 			
-			extractor = aTagName.getContent().getTextExtractor();
-			extractor.setConvertNonBreakingSpaces(true);
-			String tagName = extractor.toString();
-			
-			keywords.add(tagTypePrefix + tagName);
+			String tagName = aTagName.toString();
+			Matcher matcher = Pattern.compile("<a[^>]*>([^<]*)</a>").matcher(tagName);
+			if (matcher.matches()) {
+				tagName = matcher.group(1);
+				keywords.add(tagTypePrefix + tagName);
+			}
 		}
 		
 		// Rating, Post ID
@@ -91,6 +93,8 @@ public class KonachanPostParser implements ImageboardParser {
 
 		// Image URL
 		Element aImageUrl = source.getElementById("highres");
+		if (aImageUrl == null)
+			throw new IOException("Post parser error");
 		imageUrl = aImageUrl.getAttributeValue("href");
 		
 		info = new PostInfo(new URL(imageUrl), keywords, id);

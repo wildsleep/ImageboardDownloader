@@ -28,12 +28,13 @@ public class JpegTagTask implements Task {
 		Collection<String> keywords = keywordStrategy.get();
 		
 		state.setMessage("Tagging file...");
-		file.renameTo(temp);
-		JpegTagger.tag(temp, file, keywords);
-		temp.delete();
-		
-		state.setMessage("Finished.");
-		state.setFinished();
+		if (file.renameTo(temp)) {
+			JpegTagger.tag(temp, file, keywords);
+			temp.delete();
+			
+			state.setMessage("Finished.");
+			state.setFinished();
+		}
 	}
 
 	@Override
