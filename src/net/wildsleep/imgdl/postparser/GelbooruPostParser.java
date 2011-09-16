@@ -18,7 +18,7 @@ public class GelbooruPostParser implements ImageboardParser {
 	
 	private URL url;
 	
-	private static final String ID_PREFIX = "gelbooru";
+	private static final String ID_PREFIX = Imageboard.GELBOORU.idPrefix();
 	private static final Pattern ID_REGEX = Pattern.compile("Id: [0-9]*");
 	private static final Pattern RATING_REGEX = Pattern.compile("Rating: (Explicit|Questionable|Safe)");
 	private static final Pattern IMAGE_URL_REGEX = Pattern.compile("http://img[0-9]*\\.gelbooru\\.com//images/[0-9]*/[0-9a-f]*\\.[0-9a-z]*");

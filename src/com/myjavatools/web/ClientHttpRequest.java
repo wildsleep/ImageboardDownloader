@@ -166,6 +166,29 @@ public class ClientHttpRequest {
 	 * adds a file parameter to the request
 	 * @param name parameter name
 	 * @param filename the name of the file
+	 * @param data file data
+	 * @throws IOException
+	 */
+	public void setParameter(String name, String filename, byte[] data) throws IOException {
+		boundary();
+		writeName(name);
+		write("; filename=\"");
+		write(filename);
+		write('"');
+		newline();
+		write("Content-Type: ");
+		String type = URLConnection.guessContentTypeFromName(filename);
+		if (type == null) type = "application/octet-stream";
+		writeln(type);
+		newline();
+		os.write(data);
+		newline();
+	}
+	
+	/**
+	 * adds a file parameter to the request
+	 * @param name parameter name
+	 * @param filename the name of the file
 	 * @param is input stream to read the contents of the file from
 	 * @throws IOException
 	 */

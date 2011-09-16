@@ -1,5 +1,9 @@
 package net.wildsleep.imgdl.task;
 
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -9,6 +13,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.imageio.ImageIO;
 
 import net.htmlparser.jericho.Element;
 import net.htmlparser.jericho.Source;
@@ -31,7 +37,10 @@ public class IqdbQueryTask implements Task {
 		false	// Shuushuu Image Board
 	};
 	
-	private static boolean IGNORE_COLORS = false;
+	private static final boolean IGNORE_COLORS = false;
+	
+	private static final int THUMB_WIDTH = -1;
+	private static final int THUMB_HEIGHT = 150;
 	
 	private static final Pattern DIMENSION_REGEX   = Pattern.compile("([0-9]*)×([0-9]*) \\[[A-za-z]*\\]");
 	private static final Pattern SIMILARITY_REGEX  = Pattern.compile("([0-9]*)% similarity");
@@ -70,7 +79,19 @@ public class IqdbQueryTask implements Task {
 					request.setParameter("service[]", String.format("%d", index));
 			}
 			if (fileStrategy != null) {
-				request.setParameter("file", fileStrategy.get());
+				File file = fileStrategy.get();
+				
+				Image image = ImageIO.read(file);
+				image = image.getScaledInstance(THUMB_WIDTH, THUMB_HEIGHT, 0);
+				BufferedImage thumb = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_RGB);
+				Graphics g = thumb.createGraphics();
+				g.drawImage(image, 0, 0, null);
+				g.dispose();
+				
+				ByteArrayOutputStream out = new ByteArrayOutputStream();
+				ImageIO.write(thumb, "jpeg", out);
+				
+				request.setParameter("file", file.getName(), out.toByteArray());
 				request.setParameter("url", "http://");
 			} else {
 				request.setParameter("url", urlStrategy.get());
@@ -109,9 +130,9 @@ public class IqdbQueryTask implements Task {
 		} catch (IOException e) {
 			e.printStackTrace();
 			if (fileStrategy != null) {
-				state.setError("IQDB lookup failed on file " + fileStrategy.get().getName() + ".");
+				state.setError("Error in IQDB lookup on file " + fileStrategy.get().getName() + ".");
 			} else {
-				state.setError("IQDB lookup failed on url " + urlStrategy.get().getFile() + ".");
+				state.setError("Error in IQDB lookup on url " + urlStrategy.get().getFile() + ".");
 			}
 		}
 	}

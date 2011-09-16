@@ -16,6 +16,7 @@ import net.wildsleep.imgdl.taskfactory.IqdbFileTaskFactory;
 import net.wildsleep.imgdl.taskfactory.IqdbPostPrioritization;
 import net.wildsleep.imgdl.taskfactory.IqdbUrlTaskFactory;
 import net.wildsleep.imgdl.taskfactory.PostUrlTaskFactory;
+import net.wildsleep.imgdl.taskfactory.RedownloadFileTaskFactory;
 
 public class DownloadFrameFactory {
 	
@@ -68,6 +69,7 @@ public class DownloadFrameFactory {
 		transferHandler.addTaskFactory(new PostUrlTaskFactory(directoryStrategy));
 		transferHandler.addTaskFactory(new IqdbUrlTaskFactory(directoryStrategy, IQDB_MINIMUM_SIMILARITY, IQDB_PRIORITIZATION));
 		transferHandler.addTaskFactory(new IqdbFileTaskFactory(directoryStrategy, IQDB_MINIMUM_SIMILARITY, IQDB_PRIORITIZATION));
+		transferHandler.addTaskFactory(new RedownloadFileTaskFactory(directoryStrategy));
 		
 		JFrame frame = new JFrame(FRAME_TITLE);
 		frame.getContentPane().add(downloadPanel);

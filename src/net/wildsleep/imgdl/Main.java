@@ -11,6 +11,7 @@ public class Main {
 		JFrame frame = new DownloadFrameFactory().makeImageboardDownloadFrame();
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
+		frame.setAlwaysOnTop(true);
 		frame.pack();		
 	}
 }
